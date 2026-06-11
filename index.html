@@ -12,7 +12,7 @@
     --bg:#101216; --panel:#181B21; --panel2:#1F232B; --line:#2A2F3A;
     --text:#EDEFF3; --muted:#8B93A3; --dim:#5B6372;
     --accent:#FFB02E; --accent-ink:#1A1303;
-    --keep:#3D9970; --danger:#E5484D;
+    --keep:#3D9970; --danger:#E5484D; --read:#4A86E8;
     --radius:16px;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
@@ -26,14 +26,12 @@
   h1,h2,h3{font-family:'Space Grotesk',sans-serif; letter-spacing:-0.01em;}
   .mono{font-family:'JetBrains Mono',monospace;}
 
-  /* Header */
   header{display:flex; align-items:center; justify-content:space-between; padding:8px 0 20px;}
   .brand{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:18px;}
   .brand span{color:var(--accent);}
   .acct{font-size:12px; color:var(--muted); text-align:right;}
   .acct button{background:none; border:none; color:var(--dim); font-size:12px; cursor:pointer; text-decoration:underline;}
 
-  /* Counter band — signature element */
   .band{
     background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
     padding:18px 20px; margin-bottom:20px; position:relative; overflow:hidden;
@@ -42,12 +40,13 @@
     position:absolute; inset:0; background:linear-gradient(90deg, rgba(255,176,46,.16), rgba(255,176,46,.04));
     transform-origin:left; transform:scaleX(0); transition:transform .6s cubic-bezier(.2,.8,.2,1);
   }
-  .band .row{position:relative; display:flex; align-items:baseline; justify-content:space-between;}
-  .band .num{font-family:'JetBrains Mono',monospace; font-size:34px; font-weight:700; color:var(--accent);}
-  .band .lbl{font-size:12px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted);}
+  .band .row{position:relative; display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;}
+  .band .num{font-family:'JetBrains Mono',monospace; font-size:30px; font-weight:700; color:var(--accent);}
+  .band .num.blue{color:var(--read); font-size:22px;}
+  .band .num.plain{color:var(--text); font-size:22px;}
+  .band .lbl{font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted);}
   .band .sub{position:relative; font-size:12px; color:var(--dim); margin-top:4px;}
 
-  /* Cards / panels */
   .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:20px; margin-bottom:16px;}
   .card h2{font-size:17px; margin-bottom:10px;}
   .card p{color:var(--muted); font-size:14px;}
@@ -56,13 +55,12 @@
     width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:10px;
     color:var(--text); padding:12px 14px; font-size:15px; font-family:'JetBrains Mono',monospace;
   }
-  input:focus, select:focus, button:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  input:focus, select:focus, button:focus-visible, summary:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
 
-  /* Buttons */
   .btn{
     display:inline-flex; align-items:center; justify-content:center; gap:8px;
-    border:none; border-radius:12px; padding:14px 20px; font-size:15px; font-weight:600;
-    font-family:'Inter',sans-serif; cursor:pointer; transition:transform .08s ease, filter .15s ease;
+    border:none; border-radius:12px; padding:14px 16px; font-size:14px; font-weight:600;
+    font-family:'Inter',sans-serif; cursor:pointer; transition:transform .08s ease;
     width:100%;
   }
   .btn:active{transform:scale(.98);}
@@ -70,13 +68,14 @@
   .btn-ghost{background:var(--panel2); color:var(--text); border:1px solid var(--line);}
   .btn-danger{background:var(--danger); color:#fff;}
   .btn-keep{background:transparent; color:var(--keep); border:1.5px solid var(--keep);}
+  .btn-read{background:transparent; color:var(--read); border:1.5px solid var(--read);}
   .btn[disabled]{opacity:.45; cursor:default;}
   .btnrow{display:flex; gap:10px; margin-top:16px;}
+  .btncol{display:flex; flex-direction:column; gap:10px; margin-top:16px;}
 
-  /* Group triage card */
   .group-card{
     background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
-    padding:22px; animation:slideIn .35s cubic-bezier(.2,.8,.2,1);
+    padding:22px; animation:slideIn .35s cubic-bezier(.2,.8,.2,1); margin-bottom:16px;
   }
   @keyframes slideIn{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:none;}}
   @media (prefers-reduced-motion: reduce){ .group-card{animation:none;} .band .fill{transition:none;} }
@@ -86,32 +85,47 @@
   .stats{display:flex; gap:18px; margin:16px 0; padding:12px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line);}
   .stat .v{font-family:'JetBrains Mono',monospace; font-size:18px; font-weight:700;}
   .stat .k{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em;}
-  .samples{margin:4px 0 6px;}
-  .samples li{list-style:none; font-size:13px; color:var(--muted); padding:7px 0; border-bottom:1px dashed var(--line);}
-  .samples li:last-child{border-bottom:none;}
-  .samples li .d{color:var(--dim); font-family:'JetBrains Mono',monospace; font-size:11px; margin-right:8px;}
+
+  /* Mail accordion with checkboxes */
+  details.maillist{border:1px solid var(--line); border-radius:12px; background:var(--panel2); overflow:hidden;}
+  details.maillist summary{
+    list-style:none; cursor:pointer; padding:13px 16px; font-size:13px; color:var(--muted);
+    display:flex; justify-content:space-between; align-items:center; user-select:none;
+  }
+  details.maillist summary::-webkit-details-marker{display:none;}
+  details.maillist summary .chev{transition:transform .2s; color:var(--dim);}
+  details.maillist[open] summary .chev{transform:rotate(180deg);}
+  .mailitems{max-height:340px; overflow-y:auto; border-top:1px solid var(--line);}
+  .mailitem{display:flex; gap:12px; align-items:flex-start; padding:11px 16px; border-bottom:1px solid var(--line); font-size:13px;}
+  .mailitem:last-child{border-bottom:none;}
+  .mailitem input[type=checkbox]{
+    width:19px; height:19px; flex:none; margin-top:2px; accent-color:var(--accent); cursor:pointer;
+  }
+  .mailitem .subj{color:var(--text); word-break:break-word;}
+  .mailitem .d{color:var(--dim); font-family:'JetBrains Mono',monospace; font-size:11px; display:block;}
+  .mailitem.unchecked .subj{color:var(--dim); text-decoration:line-through;}
+  .selbar{display:flex; gap:14px; padding:10px 16px; border-top:1px solid var(--line); font-size:12px;}
+  .selbar button{background:none; border:none; color:var(--accent); font-size:12px; cursor:pointer; text-decoration:underline; padding:0;}
 
   .queue-hint{text-align:center; font-size:12px; color:var(--dim); margin-top:14px;}
-
-  /* Progress / status */
   .status{font-size:13px; color:var(--muted); text-align:center; padding:10px 0;}
   .spinner{display:inline-block; width:14px; height:14px; border:2px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; vertical-align:-2px; margin-right:8px;}
   @keyframes spin{to{transform:rotate(360deg);}}
 
-  /* Overview list */
-  .ov-item{display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--line); font-size:14px;}
+  .ov-item{display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--line); font-size:14px; gap:10px;}
   .ov-item:last-child{border:none;}
   .ov-item .n{color:var(--muted); font-family:'JetBrains Mono',monospace;}
-  .pill{font-size:11px; padding:3px 9px; border-radius:99px; border:1px solid var(--line); color:var(--muted);}
+  .pill{font-size:11px; padding:3px 9px; border-radius:99px; border:1px solid var(--line); color:var(--muted); flex:none;}
   .pill.done-trash{color:var(--danger); border-color:var(--danger);}
   .pill.done-keep{color:var(--keep); border-color:var(--keep);}
+  .pill.done-read{color:var(--read); border-color:var(--read);}
 
   .note{font-size:12px; color:var(--dim); margin-top:12px; line-height:1.6;}
   .note b{color:var(--muted);}
   a{color:var(--accent);}
   .hidden{display:none !important;}
-  details summary{cursor:pointer; color:var(--muted); font-size:13px; margin-top:10px;}
-  details ol{margin:10px 0 0 18px; font-size:13px; color:var(--muted); line-height:1.8;}
+  details.setup summary{cursor:pointer; color:var(--muted); font-size:13px; margin-top:10px;}
+  details.setup ol{margin:10px 0 0 18px; font-size:13px; color:var(--muted); line-height:1.8;}
   code{font-family:'JetBrains Mono',monospace; font-size:12px; background:var(--panel2); padding:2px 6px; border-radius:6px;}
 </style>
 </head>
@@ -126,16 +140,19 @@
     </div>
   </header>
 
-  <!-- Counter band -->
   <div class="band" id="band">
     <div class="fill" id="bandFill"></div>
     <div class="row">
       <div>
         <div class="num mono" id="cleanedCount">0</div>
-        <div class="lbl">Mails in den Papierkorb verschoben</div>
+        <div class="lbl">Im Papierkorb</div>
+      </div>
+      <div>
+        <div class="num mono blue" id="readCount">0</div>
+        <div class="lbl">Als gelesen markiert</div>
       </div>
       <div style="text-align:right">
-        <div class="num mono" style="color:var(--text); font-size:22px" id="groupProgress">–</div>
+        <div class="num mono plain" id="groupProgress">–</div>
         <div class="lbl">Gruppen erledigt</div>
       </div>
     </div>
@@ -151,26 +168,25 @@
     <div class="btnrow">
       <button class="btn btn-accent" id="btnLogin">Mit Google anmelden</button>
     </div>
-    <details>
+    <details class="setup">
       <summary>Einmalige Einrichtung: Client-ID erstellen (5 Min.)</summary>
       <ol>
-        <li>Öffne <a href="https://console.cloud.google.com" target="_blank" rel="noopener">console.cloud.google.com</a> → neues Projekt anlegen (z.&nbsp;B. „Inbox Cleaner").</li>
-        <li>„APIs &amp; Dienste" → „Bibliothek" → <b>Gmail API</b> suchen → aktivieren.</li>
-        <li>„OAuth-Zustimmungsbildschirm" → Extern → App-Name eingeben → dich selbst unter <b>Testnutzer</b> hinzufügen.</li>
-        <li>„Anmeldedaten" → „Anmeldedaten erstellen" → <b>OAuth-Client-ID</b> → Typ „Webanwendung".</li>
-        <li>Unter „Autorisierte JavaScript-Quellen" die Adresse eintragen, unter der diese Seite läuft (z.&nbsp;B. <code>https://deine-app.vercel.app</code> oder <code>http://localhost:8000</code>).</li>
-        <li>Client-ID kopieren und oben einfügen. Fertig.</li>
+        <li>Öffne <a href="https://console.cloud.google.com" target="_blank" rel="noopener">console.cloud.google.com</a> → neues Projekt anlegen.</li>
+        <li>„APIs &amp; Dienste" → „Bibliothek" → <b>Gmail API</b> aktivieren.</li>
+        <li>„OAuth-Zustimmungsbildschirm" → Extern → dich als <b>Testnutzer</b> hinzufügen.</li>
+        <li>„Anmeldedaten" → <b>OAuth-Client-ID</b> → Typ „Webanwendung".</li>
+        <li>Unter „Autorisierte JavaScript-Quellen" exakt die URL dieser Seite eintragen (mit https://, ohne Slash am Ende).</li>
+        <li>Client-ID kopieren und oben einfügen.</li>
       </ol>
     </details>
-    <div class="note"><b>Wichtig:</b> Die Seite muss über http(s) laufen, nicht als Datei geöffnet. Lokal reicht z.&nbsp;B. <code>python3 -m http.server</code>.</div>
   </section>
 
   <!-- STEP 2: Scan -->
   <section id="viewScan" class="card hidden">
-    <h2>2 · Werbung scannen</h2>
-    <p>Standardmäßig wird nur die Kategorie <b>Werbung</b> durchsucht. Mails mit Stern oder Anhang (z.&nbsp;B. Rechnungen) werden automatisch übersprungen.</p>
+    <h2>2 · Postfach scannen</h2>
+    <p>Standard: <b>alle ungelesenen Mails ohne Stern</b> – jede Kategorie, auch mit Anhang. Achte beim Durchtippen auf Banken, Rechnungen &amp; Co. und wähle dort „Behalten".</p>
     <label for="query">Gmail-Suchfilter</label>
-    <input type="text" id="query" value="category:promotions -is:starred -has:attachment">
+    <input type="text" id="query" value="is:unread -is:starred">
     <label for="depth">Wie viele Mails analysieren?</label>
     <select id="depth">
       <option value="300">Letzte 300</option>
@@ -209,12 +225,11 @@
   const SCOPE = 'https://www.googleapis.com/auth/gmail.modify';
 
   let tokenClient = null, accessToken = null;
-  let groups = [], idx = 0, cleaned = 0, totalScanned = 0;
+  let groups = [], idx = 0, cleaned = 0, markedRead = 0, totalScanned = 0;
 
   const $ = id => document.getElementById(id);
   const show = (el,on=true) => el.classList.toggle('hidden', !on);
 
-  /* ---------- safe storage (optional, app works without it) ---------- */
   const store = {
     get(k){ try{ return window.localStorage.getItem(k); }catch(e){ return null; } },
     set(k,v){ try{ window.localStorage.setItem(k,v); }catch(e){} }
@@ -280,7 +295,6 @@
     $('btnScan').disabled = true;
 
     try{
-      // 1) collect message ids
       st.innerHTML = '<span class="spinner"></span>Suche Mails …';
       let ids = [], pageToken = null;
       do{
@@ -299,7 +313,6 @@
         return;
       }
 
-      // 2) fetch metadata with small concurrency pool
       const meta = [];
       let done = 0;
       const fetchOne = async (id) => {
@@ -316,21 +329,22 @@
         while(cursor < ids.length){ const i = cursor++; try{ await fetchOne(ids[i]); }catch(e){} }
       }));
 
-      // 3) group by sender address
       const map = new Map();
       for(const m of meta){
         const match = m.from.match(/<([^>]+)>/);
         const addr = (match ? match[1] : m.from).trim().toLowerCase();
         const name = m.from.replace(/<[^>]+>/,'').replace(/"/g,'').trim() || addr;
-        if(!map.has(addr)) map.set(addr, { addr, name, ids:[], subjects:[], min:Infinity, max:0 });
+        if(!map.has(addr)) map.set(addr, { addr, name, items:[], min:Infinity, max:0 });
         const g = map.get(addr);
-        g.ids.push(m.id);
-        if(g.subjects.length < 4 && !g.subjects.some(s=>s.subject===m.subject)) g.subjects.push({subject:m.subject, ts:m.ts});
+        g.items.push({ id:m.id, subject:m.subject, ts:m.ts, checked:true });
         if(m.ts){ g.min = Math.min(g.min, m.ts); g.max = Math.max(g.max, m.ts); }
       }
-      groups = [...map.values()].sort((a,b)=>b.ids.length - a.ids.length);
-      groups.forEach(g => g.state = 'open'); // open | trashed | kept
-      idx = 0; cleaned = 0;
+      groups = [...map.values()].sort((a,b)=>b.items.length - a.items.length);
+      groups.forEach(g => {
+        g.items.sort((a,b)=>b.ts-a.ts);
+        g.state = 'open'; // open | trashed | kept | read
+      });
+      idx = 0; cleaned = 0; markedRead = 0;
       updateBand();
 
       show($('viewScan'), false);
@@ -353,8 +367,9 @@
 
   function fmtDate(ts){
     if(!ts || ts===Infinity) return '–';
-    return new Date(ts).toLocaleDateString('de-DE',{month:'short', year:'numeric'});
+    return new Date(ts).toLocaleDateString('de-DE',{day:'2-digit', month:'short', year:'2-digit'});
   }
+  function checkedIds(g){ return g.items.filter(i=>i.checked).map(i=>i.id); }
 
   function renderDeck(){
     const deck = $('deck');
@@ -362,75 +377,132 @@
     if(idx === -1){
       deck.innerHTML = '';
       show($('allDone'), true);
-      $('doneSummary').textContent = cleaned + ' Mails aus ' + groups.filter(g=>g.state==='trashed').length +
-        ' Gruppen liegen jetzt im Papierkorb. ' + groups.filter(g=>g.state==='kept').length + ' Gruppen hast du behalten.';
+      $('doneSummary').textContent =
+        cleaned + ' Mails im Papierkorb · ' + markedRead + ' als gelesen markiert · ' +
+        groups.filter(g=>g.state==='kept').length + ' Gruppen behalten.';
       updateBand();
       return;
     }
     const g = groups[idx];
     const openCount = groups.filter(x=>x.state==='open').length;
+    const nSel = checkedIds(g).length;
+
     deck.innerHTML =
       '<div class="group-card">' +
         '<div class="eyebrow">Gruppe ' + (groups.length-openCount+1) + ' von ' + groups.length + '</div>' +
         '<div class="sender">' + esc(g.name) + '</div>' +
         '<div class="addr">' + esc(g.addr) + '</div>' +
         '<div class="stats">' +
-          '<div class="stat"><div class="v">' + g.ids.length + '</div><div class="k">Mails</div></div>' +
+          '<div class="stat"><div class="v">' + g.items.length + '</div><div class="k">Mails</div></div>' +
           '<div class="stat"><div class="v">' + fmtDate(g.min) + '</div><div class="k">Älteste</div></div>' +
           '<div class="stat"><div class="v">' + fmtDate(g.max) + '</div><div class="k">Neueste</div></div>' +
         '</div>' +
-        '<ul class="samples">' + g.subjects.map(s =>
-          '<li><span class="d">' + fmtDate(s.ts) + '</span>' + esc(s.subject) + '</li>').join('') + '</ul>' +
-        '<div class="btnrow">' +
-          '<button class="btn btn-keep" id="btnKeep">Behalten</button>' +
-          '<button class="btn btn-danger" id="btnTrash">Papierkorb (' + g.ids.length + ')</button>' +
+        '<details class="maillist">' +
+          '<summary><span>Alle ' + g.items.length + ' Mails ansehen &amp; einzeln abwählen</span><span class="chev">▾</span></summary>' +
+          '<div class="mailitems" id="mailItems">' +
+            g.items.map((it,i) =>
+              '<label class="mailitem' + (it.checked?'':' unchecked') + '">' +
+                '<input type="checkbox" data-i="' + i + '"' + (it.checked?' checked':'') + '>' +
+                '<span class="subj"><span class="d">' + fmtDate(it.ts) + '</span>' + esc(it.subject) + '</span>' +
+              '</label>'
+            ).join('') +
+          '</div>' +
+          '<div class="selbar">' +
+            '<button type="button" id="selAll">Alle auswählen</button>' +
+            '<button type="button" id="selNone">Alle abwählen</button>' +
+          '</div>' +
+        '</details>' +
+        '<div class="btncol">' +
+          '<button class="btn btn-danger" id="btnTrash">Papierkorb (<span id="cntT">' + nSel + '</span>)</button>' +
+          '<div class="btnrow" style="margin-top:0">' +
+            '<button class="btn btn-read" id="btnRead">Als gelesen markieren (<span id="cntR">' + nSel + '</span>)</button>' +
+            '<button class="btn btn-keep" id="btnKeep">Behalten</button>' +
+          '</div>' +
         '</div>' +
-        '<div class="queue-hint" id="trashStatus">Noch ' + openCount + ' Gruppen in der Warteschlange</div>' +
+        '<div class="queue-hint" id="actStatus">Noch ' + openCount + ' Gruppen in der Warteschlange</div>' +
       '</div>';
 
+    // checkbox handling (delegated)
+    $('mailItems').addEventListener('change', (e) => {
+      if(e.target.matches('input[type=checkbox]')){
+        const i = +e.target.dataset.i;
+        g.items[i].checked = e.target.checked;
+        e.target.closest('.mailitem').classList.toggle('unchecked', !e.target.checked);
+        refreshCounts(g);
+      }
+    });
+    $('selAll').addEventListener('click', () => setAll(g, true));
+    $('selNone').addEventListener('click', () => setAll(g, false));
+
     $('btnKeep').addEventListener('click', () => { g.state='kept'; idx++; renderDeck(); renderOverview(); });
-    $('btnTrash').addEventListener('click', () => trashGroup(g));
+    $('btnTrash').addEventListener('click', () => actOnGroup(g, 'trash'));
+    $('btnRead').addEventListener('click', () => actOnGroup(g, 'read'));
   }
 
-  async function trashGroup(g){
-    const btnT = $('btnTrash'), btnK = $('btnKeep'), st = $('trashStatus');
-    btnT.disabled = true; btnK.disabled = true;
+  function setAll(g, val){
+    g.items.forEach(it => it.checked = val);
+    document.querySelectorAll('#mailItems input[type=checkbox]').forEach(cb => {
+      cb.checked = val;
+      cb.closest('.mailitem').classList.toggle('unchecked', !val);
+    });
+    refreshCounts(g);
+  }
+
+  function refreshCounts(g){
+    const n = checkedIds(g).length;
+    $('cntT').textContent = n;
+    $('cntR').textContent = n;
+    $('btnTrash').disabled = n===0;
+    $('btnRead').disabled = n===0;
+  }
+
+  async function actOnGroup(g, action){
+    const ids = checkedIds(g);
+    if(ids.length === 0) return;
+    const st = $('actStatus');
+    ['btnTrash','btnRead','btnKeep'].forEach(b => $(b).disabled = true);
     try{
-      // batchModify: up to 1000 ids per call
-      for(let i=0; i<g.ids.length; i+=1000){
-        const chunk = g.ids.slice(i, i+1000);
-        st.innerHTML = '<span class="spinner"></span>Verschiebe ' + Math.min(i+chunk.length, g.ids.length) + ' / ' + g.ids.length + ' …';
-        await api('/messages/batchModify', {
-          method:'POST',
-          body: JSON.stringify({ ids: chunk, addLabelIds:['TRASH'], removeLabelIds:['INBOX','UNREAD'] })
-        });
+      const body = action==='trash'
+        ? { addLabelIds:['TRASH'], removeLabelIds:['INBOX','UNREAD'] }
+        : { removeLabelIds:['UNREAD'] };
+      for(let i=0; i<ids.length; i+=1000){
+        const chunk = ids.slice(i, i+1000);
+        st.innerHTML = '<span class="spinner"></span>' +
+          (action==='trash' ? 'Verschiebe ' : 'Markiere ') + Math.min(i+chunk.length, ids.length) + ' / ' + ids.length + ' …';
+        await api('/messages/batchModify', { method:'POST', body: JSON.stringify({ ids: chunk, ...body }) });
       }
-      g.state = 'trashed';
-      cleaned += g.ids.length;
+      const skipped = g.items.length - ids.length;
+      if(action==='trash'){ g.state='trashed'; cleaned += ids.length; }
+      else { g.state='read'; markedRead += ids.length; }
+      g.skipped = skipped;
       updateBand();
       idx++;
       renderDeck(); renderOverview();
     }catch(e){
       st.textContent = 'Fehler: ' + e.message;
-      btnT.disabled = false; btnK.disabled = false;
+      ['btnTrash','btnRead','btnKeep'].forEach(b => $(b).disabled = false);
+      refreshCounts(g);
     }
   }
 
   function renderOverview(){
     const el = $('overviewList');
     el.innerHTML = groups.map(g => {
+      const skip = g.skipped ? ' <span class="n">(' + g.skipped + ' übersprungen)</span>' : '';
       const pill = g.state==='trashed' ? '<span class="pill done-trash">Papierkorb</span>'
+                 : g.state==='read'    ? '<span class="pill done-read">Gelesen</span>'
                  : g.state==='kept'    ? '<span class="pill done-keep">Behalten</span>'
                  : '<span class="pill">Offen</span>';
-      return '<div class="ov-item"><div>' + esc(g.name) + ' <span class="n">· ' + g.ids.length + '</span></div>' + pill + '</div>';
+      return '<div class="ov-item"><div>' + esc(g.name) + ' <span class="n">· ' + g.items.length + '</span>' + skip + '</div>' + pill + '</div>';
     }).join('');
   }
 
   function updateBand(){
     $('cleanedCount').textContent = cleaned;
+    $('readCount').textContent = markedRead;
     const done = groups.filter(g=>g.state!=='open').length;
     $('groupProgress').textContent = groups.length ? (done + '/' + groups.length) : '–';
-    const ratio = totalScanned ? Math.min(cleaned/totalScanned, 1) : 0;
+    const ratio = totalScanned ? Math.min((cleaned+markedRead)/totalScanned, 1) : 0;
     $('bandFill').style.transform = 'scaleX(' + ratio + ')';
   }
 
