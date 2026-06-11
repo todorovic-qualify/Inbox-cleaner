@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Inbox Cleaner – Aufräumen ohne Risiko</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root{
+    --bg:#101216; --panel:#181B21; --panel2:#1F232B; --line:#2A2F3A;
+    --text:#EDEFF3; --muted:#8B93A3; --dim:#5B6372;
+    --accent:#FFB02E; --accent-ink:#1A1303;
+    --keep:#3D9970; --danger:#E5484D;
+    --radius:16px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:'Inter',system-ui,sans-serif; font-size:15px; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:680px; margin:0 auto; padding:20px 16px 120px;}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif; letter-spacing:-0.01em;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  /* Header */
+  header{display:flex; align-items:center; justify-content:space-between; padding:8px 0 20px;}
+  .brand{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:18px;}
+  .brand span{color:var(--accent);}
+  .acct{font-size:12px; color:var(--muted); text-align:right;}
+  .acct button{background:none; border:none; color:var(--dim); font-size:12px; cursor:pointer; text-decoration:underline;}
+
+  /* Counter band — signature element */
+  .band{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:18px 20px; margin-bottom:20px; position:relative; overflow:hidden;
+  }
+  .band .fill{
+    position:absolute; inset:0; background:linear-gradient(90deg, rgba(255,176,46,.16), rgba(255,176,46,.04));
+    transform-origin:left; transform:scaleX(0); transition:transform .6s cubic-bezier(.2,.8,.2,1);
+  }
+  .band .row{position:relative; display:flex; align-items:baseline; justify-content:space-between;}
+  .band .num{font-family:'JetBrains Mono',monospace; font-size:34px; font-weight:700; color:var(--accent);}
+  .band .lbl{font-size:12px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted);}
+  .band .sub{position:relative; font-size:12px; color:var(--dim); margin-top:4px;}
+
+  /* Cards / panels */
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:20px; margin-bottom:16px;}
+  .card h2{font-size:17px; margin-bottom:10px;}
+  .card p{color:var(--muted); font-size:14px;}
+  label{display:block; font-size:12px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin:14px 0 6px;}
+  input[type=text], select{
+    width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+    color:var(--text); padding:12px 14px; font-size:15px; font-family:'JetBrains Mono',monospace;
+  }
+  input:focus, select:focus, button:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  /* Buttons */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    border:none; border-radius:12px; padding:14px 20px; font-size:15px; font-weight:600;
+    font-family:'Inter',sans-serif; cursor:pointer; transition:transform .08s ease, filter .15s ease;
+    width:100%;
+  }
+  .btn:active{transform:scale(.98);}
+  .btn-accent{background:var(--accent); color:var(--accent-ink);}
+  .btn-ghost{background:var(--panel2); color:var(--text); border:1px solid var(--line);}
+  .btn-danger{background:var(--danger); color:#fff;}
+  .btn-keep{background:transparent; color:var(--keep); border:1.5px solid var(--keep);}
+  .btn[disabled]{opacity:.45; cursor:default;}
+  .btnrow{display:flex; gap:10px; margin-top:16px;}
+
+  /* Group triage card */
+  .group-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:22px; animation:slideIn .35s cubic-bezier(.2,.8,.2,1);
+  }
+  @keyframes slideIn{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:none;}}
+  @media (prefers-reduced-motion: reduce){ .group-card{animation:none;} .band .fill{transition:none;} }
+  .group-card .eyebrow{font-size:11px; text-transform:uppercase; letter-spacing:.14em; color:var(--accent); font-family:'JetBrains Mono',monospace; margin-bottom:8px;}
+  .group-card .sender{font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; line-height:1.2; word-break:break-word;}
+  .group-card .addr{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--dim); margin-top:4px; word-break:break-all;}
+  .stats{display:flex; gap:18px; margin:16px 0; padding:12px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line);}
+  .stat .v{font-family:'JetBrains Mono',monospace; font-size:18px; font-weight:700;}
+  .stat .k{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em;}
+  .samples{margin:4px 0 6px;}
+  .samples li{list-style:none; font-size:13px; color:var(--muted); padding:7px 0; border-bottom:1px dashed var(--line);}
+  .samples li:last-child{border-bottom:none;}
+  .samples li .d{color:var(--dim); font-family:'JetBrains Mono',monospace; font-size:11px; margin-right:8px;}
+
+  .queue-hint{text-align:center; font-size:12px; color:var(--dim); margin-top:14px;}
+
+  /* Progress / status */
+  .status{font-size:13px; color:var(--muted); text-align:center; padding:10px 0;}
+  .spinner{display:inline-block; width:14px; height:14px; border:2px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; vertical-align:-2px; margin-right:8px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* Overview list */
+  .ov-item{display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--line); font-size:14px;}
+  .ov-item:last-child{border:none;}
+  .ov-item .n{color:var(--muted); font-family:'JetBrains Mono',monospace;}
+  .pill{font-size:11px; padding:3px 9px; border-radius:99px; border:1px solid var(--line); color:var(--muted);}
+  .pill.done-trash{color:var(--danger); border-color:var(--danger);}
+  .pill.done-keep{color:var(--keep); border-color:var(--keep);}
+
+  .note{font-size:12px; color:var(--dim); margin-top:12px; line-height:1.6;}
+  .note b{color:var(--muted);}
+  a{color:var(--accent);}
+  .hidden{display:none !important;}
+  details summary{cursor:pointer; color:var(--muted); font-size:13px; margin-top:10px;}
+  details ol{margin:10px 0 0 18px; font-size:13px; color:var(--muted); line-height:1.8;}
+  code{font-family:'JetBrains Mono',monospace; font-size:12px; background:var(--panel2); padding:2px 6px; border-radius:6px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">Inbox<span>Cleaner</span></div>
+    <div class="acct">
+      <div id="acctEmail"></div>
+      <button id="btnLogout" class="hidden">Abmelden</button>
+    </div>
+  </header>
+
+  <!-- Counter band -->
+  <div class="band" id="band">
+    <div class="fill" id="bandFill"></div>
+    <div class="row">
+      <div>
+        <div class="num mono" id="cleanedCount">0</div>
+        <div class="lbl">Mails in den Papierkorb verschoben</div>
+      </div>
+      <div style="text-align:right">
+        <div class="num mono" style="color:var(--text); font-size:22px" id="groupProgress">–</div>
+        <div class="lbl">Gruppen erledigt</div>
+      </div>
+    </div>
+    <div class="sub">Papierkorb = 30 Tage wiederherstellbar. Nichts wird endgültig gelöscht.</div>
+  </div>
+
+  <!-- STEP 1: Setup -->
+  <section id="viewSetup" class="card">
+    <h2>1 · Mit Google verbinden</h2>
+    <p>Die App läuft komplett in deinem Browser. Deine Mails gehen an keinen fremden Server – nur direkt zwischen dir und Google.</p>
+    <label for="clientId">Google OAuth Client-ID</label>
+    <input type="text" id="clientId" placeholder="xxxxxxxx.apps.googleusercontent.com" autocomplete="off">
+    <div class="btnrow">
+      <button class="btn btn-accent" id="btnLogin">Mit Google anmelden</button>
+    </div>
+    <details>
+      <summary>Einmalige Einrichtung: Client-ID erstellen (5 Min.)</summary>
+      <ol>
+        <li>Öffne <a href="https://console.cloud.google.com" target="_blank" rel="noopener">console.cloud.google.com</a> → neues Projekt anlegen (z.&nbsp;B. „Inbox Cleaner").</li>
+        <li>„APIs &amp; Dienste" → „Bibliothek" → <b>Gmail API</b> suchen → aktivieren.</li>
+        <li>„OAuth-Zustimmungsbildschirm" → Extern → App-Name eingeben → dich selbst unter <b>Testnutzer</b> hinzufügen.</li>
+        <li>„Anmeldedaten" → „Anmeldedaten erstellen" → <b>OAuth-Client-ID</b> → Typ „Webanwendung".</li>
+        <li>Unter „Autorisierte JavaScript-Quellen" die Adresse eintragen, unter der diese Seite läuft (z.&nbsp;B. <code>https://deine-app.vercel.app</code> oder <code>http://localhost:8000</code>).</li>
+        <li>Client-ID kopieren und oben einfügen. Fertig.</li>
+      </ol>
+    </details>
+    <div class="note"><b>Wichtig:</b> Die Seite muss über http(s) laufen, nicht als Datei geöffnet. Lokal reicht z.&nbsp;B. <code>python3 -m http.server</code>.</div>
+  </section>
+
+  <!-- STEP 2: Scan -->
+  <section id="viewScan" class="card hidden">
+    <h2>2 · Werbung scannen</h2>
+    <p>Standardmäßig wird nur die Kategorie <b>Werbung</b> durchsucht. Mails mit Stern oder Anhang (z.&nbsp;B. Rechnungen) werden automatisch übersprungen.</p>
+    <label for="query">Gmail-Suchfilter</label>
+    <input type="text" id="query" value="category:promotions -is:starred -has:attachment">
+    <label for="depth">Wie viele Mails analysieren?</label>
+    <select id="depth">
+      <option value="300">Letzte 300</option>
+      <option value="1000" selected>Letzte 1.000</option>
+      <option value="3000">Letzte 3.000</option>
+      <option value="6000">Alle (bis 6.000)</option>
+    </select>
+    <div class="btnrow">
+      <button class="btn btn-accent" id="btnScan">Scan starten</button>
+    </div>
+    <div class="status hidden" id="scanStatus"></div>
+  </section>
+
+  <!-- STEP 3: Triage deck -->
+  <section id="viewTriage" class="hidden">
+    <div id="deck"></div>
+    <div class="card hidden" id="allDone">
+      <h2>Alles erledigt ✦</h2>
+      <p id="doneSummary"></p>
+      <div class="btnrow">
+        <button class="btn btn-ghost" id="btnRescan">Neuen Scan starten</button>
+      </div>
+    </div>
+    <div class="card" id="overviewCard">
+      <h2 style="font-size:15px">Alle Gruppen</h2>
+      <div id="overviewList"></div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  'use strict';
+  const GMAIL = 'https://gmail.googleapis.com/gmail/v1/users/me';
+  const SCOPE = 'https://www.googleapis.com/auth/gmail.modify';
+
+  let tokenClient = null, accessToken = null;
+  let groups = [], idx = 0, cleaned = 0, totalScanned = 0;
+
+  const $ = id => document.getElementById(id);
+  const show = (el,on=true) => el.classList.toggle('hidden', !on);
+
+  /* ---------- safe storage (optional, app works without it) ---------- */
+  const store = {
+    get(k){ try{ return window.localStorage.getItem(k); }catch(e){ return null; } },
+    set(k,v){ try{ window.localStorage.setItem(k,v); }catch(e){} }
+  };
+
+  /* ---------- auth ---------- */
+  const savedId = store.get('ic_client_id');
+  if(savedId) $('clientId').value = savedId;
+
+  $('btnLogin').addEventListener('click', () => {
+    const cid = $('clientId').value.trim();
+    if(!cid){ alert('Bitte zuerst die Client-ID einfügen.'); return; }
+    if(!window.google || !google.accounts){ alert('Google-Login lädt noch – bitte kurz warten und erneut tippen.'); return; }
+    store.set('ic_client_id', cid);
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: cid,
+      scope: SCOPE,
+      callback: async (resp) => {
+        if(resp.error){ alert('Anmeldung fehlgeschlagen: ' + resp.error); return; }
+        accessToken = resp.access_token;
+        await whoAmI();
+        show($('viewSetup'), false);
+        show($('viewScan'), true);
+        show($('btnLogout'), true);
+      }
+    });
+    tokenClient.requestAccessToken();
+  });
+
+  $('btnLogout').addEventListener('click', () => {
+    if(accessToken && window.google) google.accounts.oauth2.revoke(accessToken, ()=>{});
+    location.reload();
+  });
+
+  async function api(path, opts={}){
+    const r = await fetch(GMAIL + path, {
+      ...opts,
+      headers: { 'Authorization':'Bearer ' + accessToken, 'Content-Type':'application/json', ...(opts.headers||{}) }
+    });
+    if(r.status === 401){ alert('Sitzung abgelaufen – bitte neu anmelden.'); location.reload(); throw new Error('401'); }
+    if(!r.ok){ throw new Error('Gmail API ' + r.status + ': ' + await r.text()); }
+    return r.status === 204 ? null : r.json();
+  }
+
+  async function whoAmI(){
+    try{
+      const p = await api('/profile');
+      $('acctEmail').textContent = p.emailAddress || '';
+    }catch(e){}
+  }
+
+  /* ---------- scan ---------- */
+  $('btnScan').addEventListener('click', runScan);
+  $('btnRescan').addEventListener('click', () => {
+    show($('viewTriage'), false); show($('allDone'), false); show($('viewScan'), true);
+  });
+
+  async function runScan(){
+    const q = $('query').value.trim();
+    const limit = parseInt($('depth').value, 10);
+    const st = $('scanStatus');
+    show(st, true);
+    $('btnScan').disabled = true;
+
+    try{
+      // 1) collect message ids
+      st.innerHTML = '<span class="spinner"></span>Suche Mails …';
+      let ids = [], pageToken = null;
+      do{
+        const u = '/messages?maxResults=500&q=' + encodeURIComponent(q) + (pageToken ? '&pageToken='+pageToken : '');
+        const res = await api(u);
+        (res.messages||[]).forEach(m => ids.push(m.id));
+        pageToken = res.nextPageToken || null;
+        st.innerHTML = '<span class="spinner"></span>Gefunden: ' + ids.length + ' Mails …';
+      } while(pageToken && ids.length < limit);
+      ids = ids.slice(0, limit);
+      totalScanned = ids.length;
+
+      if(ids.length === 0){
+        st.textContent = 'Keine passenden Mails gefunden. Filter anpassen?';
+        $('btnScan').disabled = false;
+        return;
+      }
+
+      // 2) fetch metadata with small concurrency pool
+      const meta = [];
+      let done = 0;
+      const fetchOne = async (id) => {
+        const m = await api('/messages/' + id + '?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date');
+        const h = {};
+        (m.payload && m.payload.headers || []).forEach(x => h[x.name.toLowerCase()] = x.value);
+        meta.push({ id, from: h.from||'', subject: h.subject||'(kein Betreff)', ts: m.internalDate ? +m.internalDate : 0 });
+        done++;
+        if(done % 25 === 0 || done === ids.length)
+          st.innerHTML = '<span class="spinner"></span>Analysiere ' + done + ' / ' + ids.length + ' …';
+      };
+      const pool = 8; let cursor = 0;
+      await Promise.all(Array.from({length: pool}, async () => {
+        while(cursor < ids.length){ const i = cursor++; try{ await fetchOne(ids[i]); }catch(e){} }
+      }));
+
+      // 3) group by sender address
+      const map = new Map();
+      for(const m of meta){
+        const match = m.from.match(/<([^>]+)>/);
+        const addr = (match ? match[1] : m.from).trim().toLowerCase();
+        const name = m.from.replace(/<[^>]+>/,'').replace(/"/g,'').trim() || addr;
+        if(!map.has(addr)) map.set(addr, { addr, name, ids:[], subjects:[], min:Infinity, max:0 });
+        const g = map.get(addr);
+        g.ids.push(m.id);
+        if(g.subjects.length < 4 && !g.subjects.some(s=>s.subject===m.subject)) g.subjects.push({subject:m.subject, ts:m.ts});
+        if(m.ts){ g.min = Math.min(g.min, m.ts); g.max = Math.max(g.max, m.ts); }
+      }
+      groups = [...map.values()].sort((a,b)=>b.ids.length - a.ids.length);
+      groups.forEach(g => g.state = 'open'); // open | trashed | kept
+      idx = 0; cleaned = 0;
+      updateBand();
+
+      show($('viewScan'), false);
+      show($('viewTriage'), true);
+      renderDeck();
+      renderOverview();
+    }catch(e){
+      st.textContent = 'Fehler: ' + e.message;
+    }finally{
+      $('btnScan').disabled = false;
+    }
+  }
+
+  /* ---------- triage deck ---------- */
+  function nextOpen(from){
+    for(let i=from;i<groups.length;i++) if(groups[i].state==='open') return i;
+    for(let i=0;i<from;i++) if(groups[i].state==='open') return i;
+    return -1;
+  }
+
+  function fmtDate(ts){
+    if(!ts || ts===Infinity) return '–';
+    return new Date(ts).toLocaleDateString('de-DE',{month:'short', year:'numeric'});
+  }
+
+  function renderDeck(){
+    const deck = $('deck');
+    idx = nextOpen(idx);
+    if(idx === -1){
+      deck.innerHTML = '';
+      show($('allDone'), true);
+      $('doneSummary').textContent = cleaned + ' Mails aus ' + groups.filter(g=>g.state==='trashed').length +
+        ' Gruppen liegen jetzt im Papierkorb. ' + groups.filter(g=>g.state==='kept').length + ' Gruppen hast du behalten.';
+      updateBand();
+      return;
+    }
+    const g = groups[idx];
+    const openCount = groups.filter(x=>x.state==='open').length;
+    deck.innerHTML =
+      '<div class="group-card">' +
+        '<div class="eyebrow">Gruppe ' + (groups.length-openCount+1) + ' von ' + groups.length + '</div>' +
+        '<div class="sender">' + esc(g.name) + '</div>' +
+        '<div class="addr">' + esc(g.addr) + '</div>' +
+        '<div class="stats">' +
+          '<div class="stat"><div class="v">' + g.ids.length + '</div><div class="k">Mails</div></div>' +
+          '<div class="stat"><div class="v">' + fmtDate(g.min) + '</div><div class="k">Älteste</div></div>' +
+          '<div class="stat"><div class="v">' + fmtDate(g.max) + '</div><div class="k">Neueste</div></div>' +
+        '</div>' +
+        '<ul class="samples">' + g.subjects.map(s =>
+          '<li><span class="d">' + fmtDate(s.ts) + '</span>' + esc(s.subject) + '</li>').join('') + '</ul>' +
+        '<div class="btnrow">' +
+          '<button class="btn btn-keep" id="btnKeep">Behalten</button>' +
+          '<button class="btn btn-danger" id="btnTrash">Papierkorb (' + g.ids.length + ')</button>' +
+        '</div>' +
+        '<div class="queue-hint" id="trashStatus">Noch ' + openCount + ' Gruppen in der Warteschlange</div>' +
+      '</div>';
+
+    $('btnKeep').addEventListener('click', () => { g.state='kept'; idx++; renderDeck(); renderOverview(); });
+    $('btnTrash').addEventListener('click', () => trashGroup(g));
+  }
+
+  async function trashGroup(g){
+    const btnT = $('btnTrash'), btnK = $('btnKeep'), st = $('trashStatus');
+    btnT.disabled = true; btnK.disabled = true;
+    try{
+      // batchModify: up to 1000 ids per call
+      for(let i=0; i<g.ids.length; i+=1000){
+        const chunk = g.ids.slice(i, i+1000);
+        st.innerHTML = '<span class="spinner"></span>Verschiebe ' + Math.min(i+chunk.length, g.ids.length) + ' / ' + g.ids.length + ' …';
+        await api('/messages/batchModify', {
+          method:'POST',
+          body: JSON.stringify({ ids: chunk, addLabelIds:['TRASH'], removeLabelIds:['INBOX','UNREAD'] })
+        });
+      }
+      g.state = 'trashed';
+      cleaned += g.ids.length;
+      updateBand();
+      idx++;
+      renderDeck(); renderOverview();
+    }catch(e){
+      st.textContent = 'Fehler: ' + e.message;
+      btnT.disabled = false; btnK.disabled = false;
+    }
+  }
+
+  function renderOverview(){
+    const el = $('overviewList');
+    el.innerHTML = groups.map(g => {
+      const pill = g.state==='trashed' ? '<span class="pill done-trash">Papierkorb</span>'
+                 : g.state==='kept'    ? '<span class="pill done-keep">Behalten</span>'
+                 : '<span class="pill">Offen</span>';
+      return '<div class="ov-item"><div>' + esc(g.name) + ' <span class="n">· ' + g.ids.length + '</span></div>' + pill + '</div>';
+    }).join('');
+  }
+
+  function updateBand(){
+    $('cleanedCount').textContent = cleaned;
+    const done = groups.filter(g=>g.state!=='open').length;
+    $('groupProgress').textContent = groups.length ? (done + '/' + groups.length) : '–';
+    const ratio = totalScanned ? Math.min(cleaned/totalScanned, 1) : 0;
+    $('bandFill').style.transform = 'scaleX(' + ratio + ')';
+  }
+
+  function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+})();
+</script>
+</body>
+</html>
