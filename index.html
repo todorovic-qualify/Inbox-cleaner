@@ -202,6 +202,30 @@
 
   <!-- STEP 3: Triage deck -->
   <section id="viewTriage" class="hidden">
+    <div class="btnrow" style="margin:0 0 16px">
+      <button class="btn btn-ghost" id="btnBulkMode">⚡ Schnellmodus: Rest als Liste abklappern</button>
+    </div>
+
+    <!-- Bulk mode -->
+    <div class="card hidden" id="bulkCard">
+      <h2 style="font-size:16px">Schnellmodus</h2>
+      <p>Alle offenen Gruppen auf einen Blick, kleinste zuerst. Häkchen weg = Gruppe bleibt unberührt. Ein Tipp auf den Button räumt alles Angehakte auf einmal weg.</p>
+      <div class="selbar" style="border:none; padding:10px 0 0">
+        <button type="button" id="bulkAll">Alle auswählen</button>
+        <button type="button" id="bulkNone">Alle abwählen</button>
+        <button type="button" id="bulkMax3">Nur Gruppen ≤ 3 Mails</button>
+      </div>
+      <div class="mailitems" id="bulkList" style="max-height:420px; border:1px solid var(--line); border-radius:12px; margin-top:10px;"></div>
+      <div class="btncol">
+        <button class="btn btn-danger" id="bulkTrash">Papierkorb (<span id="bulkCntT">0</span> Mails)</button>
+        <div class="btnrow" style="margin-top:0">
+          <button class="btn btn-read" id="bulkRead">Als gelesen (<span id="bulkCntR">0</span>)</button>
+          <button class="btn btn-ghost" id="bulkBack">Einzelmodus</button>
+        </div>
+      </div>
+      <div class="queue-hint" id="bulkStatus"></div>
+    </div>
+
     <div id="deck"></div>
     <div class="card hidden" id="allDone">
       <h2>Alles erledigt ✦</h2>
@@ -482,6 +506,94 @@
       st.textContent = 'Fehler: ' + e.message;
       ['btnTrash','btnRead','btnKeep'].forEach(b => $(b).disabled = false);
       refreshCounts(g);
+    }
+  }
+
+  /* ---------- bulk mode (Schnellmodus) ---------- */
+  $('btnBulkMode').addEventListener('click', () => {
+    show($('deck'), false); show($('bulkCard'), true); renderBulk();
+  });
+  $('bulkBack').addEventListener('click', () => {
+    show($('bulkCard'), false); show($('deck'), true); renderDeck();
+  });
+  $('bulkAll').addEventListener('click', () => setBulkAll(g => true));
+  $('bulkNone').addEventListener('click', () => setBulkAll(g => false));
+  $('bulkMax3').addEventListener('click', () => setBulkAll(g => g.items.length <= 3));
+  $('bulkTrash').addEventListener('click', () => bulkAct('trash'));
+  $('bulkRead').addEventListener('click', () => bulkAct('read'));
+
+  function openGroupsSorted(){
+    return groups.filter(g => g.state==='open').sort((a,b)=>a.items.length-b.items.length);
+  }
+
+  function renderBulk(){
+    const list = openGroupsSorted();
+    list.forEach(g => { if(g.bulkChecked === undefined) g.bulkChecked = true; });
+    const el = $('bulkList');
+    if(list.length === 0){
+      el.innerHTML = '<div style="padding:16px; font-size:13px; color:var(--dim)">Keine offenen Gruppen mehr. 🎉</div>';
+    } else {
+      el.innerHTML = list.map(g =>
+        '<label class="mailitem' + (g.bulkChecked?'':' unchecked') + '">' +
+          '<input type="checkbox" data-addr="' + esc(g.addr) + '"' + (g.bulkChecked?' checked':'') + '>' +
+          '<span class="subj"><b>' + esc(g.name) + '</b> <span class="n" style="color:var(--muted); font-family:\'JetBrains Mono\',monospace">· ' + g.items.length + '</span>' +
+          '<span class="d">' + esc(g.addr) + ' — ' + esc((g.items[0]||{}).subject||'') + '</span></span>' +
+        '</label>'
+      ).join('');
+    }
+    el.onchange = (e) => {
+      if(e.target.matches('input[type=checkbox]')){
+        const g = groups.find(x => x.addr === e.target.dataset.addr);
+        if(g){ g.bulkChecked = e.target.checked; }
+        e.target.closest('.mailitem').classList.toggle('unchecked', !e.target.checked);
+        refreshBulkCounts();
+      }
+    };
+    refreshBulkCounts();
+  }
+
+  function setBulkAll(fn){
+    openGroupsSorted().forEach(g => g.bulkChecked = fn(g));
+    renderBulk();
+  }
+
+  function refreshBulkCounts(){
+    const sel = openGroupsSorted().filter(g => g.bulkChecked);
+    const n = sel.reduce((s,g)=>s+g.items.length, 0);
+    $('bulkCntT').textContent = n;
+    $('bulkCntR').textContent = n;
+    $('bulkTrash').disabled = n===0;
+    $('bulkRead').disabled = n===0;
+  }
+
+  async function bulkAct(action){
+    const sel = openGroupsSorted().filter(g => g.bulkChecked);
+    const ids = sel.flatMap(g => g.items.map(i=>i.id));
+    if(ids.length === 0) return;
+    const st = $('bulkStatus');
+    ['bulkTrash','bulkRead','bulkBack'].forEach(b => $(b).disabled = true);
+    try{
+      const body = action==='trash'
+        ? { addLabelIds:['TRASH'], removeLabelIds:['INBOX','UNREAD'] }
+        : { removeLabelIds:['UNREAD'] };
+      for(let i=0; i<ids.length; i+=1000){
+        const chunk = ids.slice(i, i+1000);
+        st.innerHTML = '<span class="spinner"></span>' +
+          (action==='trash' ? 'Verschiebe ' : 'Markiere ') + Math.min(i+chunk.length, ids.length) + ' / ' + ids.length + ' …';
+      await api('/messages/batchModify', { method:'POST', body: JSON.stringify({ ids: chunk, ...body }) });
+      }
+      sel.forEach(g => {
+        if(action==='trash'){ g.state='trashed'; cleaned += g.items.length; }
+        else { g.state='read'; markedRead += g.items.length; }
+      });
+      st.textContent = sel.length + ' Gruppen erledigt.';
+      updateBand();
+      renderBulk(); renderOverview();
+    }catch(e){
+      st.textContent = 'Fehler: ' + e.message;
+    }finally{
+      ['bulkBack'].forEach(b => $(b).disabled = false);
+      refreshBulkCounts();
     }
   }
 
